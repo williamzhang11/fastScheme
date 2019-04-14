@@ -1,5 +1,7 @@
 package com.xiu.fastkafka.controller;
 
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +20,7 @@ public class KafkaController {
 	public String sendKafka(@RequestParam String msg) {
 		System.err.println("msg="+msg);
 		kafkaTemplate.send("test", msg);
-		System.err.println("send ok");
+		System.err.println(new Date()+"send ok");
 		
 		return "ok";
 	}
