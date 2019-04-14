@@ -1,4 +1,69 @@
 #
+
+## nginx搭建
+```
+1.安装Nginx源
+rpm -ivh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
+
+安装该rpm后，我们就能在/etc/yum.repos.d/ 目录中看到一个名为nginx.repo 的文件。
+2.安装Nginx
+yum install -y nginx
+3.Nginx默认目录
+
+whereis nginx
+
+(1) Nginx配置路径：/etc/nginx/
+(2) PID目录：/var/run/nginx.pid
+(3) 错误日志：/var/log/nginx/error.log
+(4) 访问日志：/var/log/nginx/access.log
+(5) 默认站点目录：/usr/share/nginx/html
+
+事实上，只需知道Nginx配置路径，其他路径均可在/etc/nginx/nginx.conf 以及/etc/nginx/conf.d/default.conf 中查询到
+
+```
+常用命令：
+```
+1.启动
+nginx
+2.测试Nginx配置是否正确
+nginx -t
+3.优雅重启
+nginx -s reload
+4.查看nginx的进程号：
+ps -ef |grep nginx
+5.nginx服务停止
+nginx -s stop
+kill -9 pid
+```
+配置
+
+/etc/nginx/conf.d/default.conf
+负载均衡配置
+```
+upstream site{
+
+        server 192.168.246.128:8080;
+        server 192.168.246.129:8080;
+        server 192.168.246.130:8080;
+}
+
+server{
+	listen       80;
+	
+	    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+        proxy_pass http://site;
+    }
+}
+
+
+
+```
+
+
+
+
 ## zookeeper集群搭建
 1.准备虚拟机，下载zookeeper，并上传至虚拟机，配置搭建jdk环境
 |技术|包路径|
