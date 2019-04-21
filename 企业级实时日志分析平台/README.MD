@@ -61,7 +61,84 @@ server{
 
 ```
 
+##安装keepalived
+1.手动编译安装包
+```
+下载安装包,上传到虚拟机（/usr/local/src）
+https://www.keepalived.org/download.html
 
+cd /usr/local/src
+
+安装依赖
+yum install gcc gcc-c++ make automake autoconf libtool pcre pcre-devel zlib zlib-devel openssl openssl-devel
+
+解压缩 
+tar -zxvf keepalived-2.0.15.tar.gz
+
+cd /usr/local/src/keepalived-2.0.15
+./configure --prefix=/usr/local/keepalived
+
+make && make install
+
+```
+2.编写nginx监控脚本
+nginx_check.sh
+
+```
+
+#!/bin/bash
+counter=$(ps -C nginx --no-header | wc -l)
+if [ "${counter}" = "0" ]; then
+    nginx
+    sleep 2
+    counter=$(ps -C nginx --no-header | wc -l)
+    if [ "${counter}" = "0" ]; then
+        /etc/init.d/keepalived stop
+    fi
+fi
+```
+
+2.keepalived实现nginx的高可用配置
+```
+
+1.复制/usr/local/keepalived/sbin/keepalived到/usr/sbin下
+cp /usr/local/keepalived/sbin/keepalived /usr/sbin/
+
+2.keepalived默认会读取/etc/keepalived/keepalived.conf配置文件
+mkdir /etc/keepalived
+cp /usr/local/keepalived/etc/keepalived/keepalived.conf /etc/keepalived/
+3.复制sysconfig文件到/etc/sysconfig下
+cp /usr/local/keepalived/sbin/keepalived /etc/sysconfig/
+4.
+cp /usr/local/keepalived/sbin/keepalived /etc/init.d/
+chmod 755 /etc/init.d/keepalived
+
+```
+3.配置
+```
+vi /etc/keepalived/keepalived.conf
+修改：
+#vrrp_strict
+vrrp_instance VI_1 {
+    state MASTER/BACKUP
+    interface ens33  //网卡配置
+
+
+
+virtual_ipaddress {
+        192.168.246.200
+        #192.168.200.16
+        #192.168.200.17
+        #192.168.200.18
+    }
+
+
+
+```
+
+4.验证
+service keepalived
+ps -aux|grep keepalived
 
 
 ## zookeeper集群搭建
