@@ -3,6 +3,8 @@
 nginx可用来做负载均衡，达到分流的目的，但是nginx存在单点故障的问题
 如果nginx服务挂了，整个服务也就挂了。而keepalived是一个高性能服务器，高可用/热备解决方案，可以解决单点故障的问题。
 
+![image](https://github.com/williamzhang11/fastScheme/blob/master/keepalived%2Bnginx%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4/image/keepalivenginx.jpg)
+
 ## nginx搭建
 ```
 1.安装Nginx源
