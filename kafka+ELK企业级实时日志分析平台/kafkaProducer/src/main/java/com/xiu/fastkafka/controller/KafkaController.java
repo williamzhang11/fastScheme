@@ -20,6 +20,7 @@ public class KafkaController {
 	public String sendKafka(@RequestParam String msg) {
 		System.err.println("msg="+msg);
 		kafkaTemplate.send("test", msg);
+		
 		System.err.println(new Date()+"send ok");
 		
 		return "ok";

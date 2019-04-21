@@ -1,144 +1,4 @@
-#
-
-## nginx搭建
-```
-1.安装Nginx源
-rpm -ivh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
-
-安装该rpm后，我们就能在/etc/yum.repos.d/ 目录中看到一个名为nginx.repo 的文件。
-2.安装Nginx
-yum install -y nginx
-3.Nginx默认目录
-
-whereis nginx
-
-(1) Nginx配置路径：/etc/nginx/
-(2) PID目录：/var/run/nginx.pid
-(3) 错误日志：/var/log/nginx/error.log
-(4) 访问日志：/var/log/nginx/access.log
-(5) 默认站点目录：/usr/share/nginx/html
-
-事实上，只需知道Nginx配置路径，其他路径均可在/etc/nginx/nginx.conf 以及/etc/nginx/conf.d/default.conf 中查询到
-
-```
-常用命令：
-```
-1.启动
-nginx
-2.测试Nginx配置是否正确
-nginx -t
-3.优雅重启
-nginx -s reload
-4.查看nginx的进程号：
-ps -ef |grep nginx
-5.nginx服务停止
-nginx -s stop
-kill -9 pid
-```
-配置
-
-/etc/nginx/conf.d/default.conf
-负载均衡配置
-```
-upstream site{
-
-        server 192.168.246.128:8080;
-        server 192.168.246.129:8080;
-        server 192.168.246.130:8080;
-}
-
-server{
-	listen       80;
-	
-	    location / {
-        root   /usr/share/nginx/html;
-        index  index.html index.htm;
-        proxy_pass http://site;
-    }
-}
-
-
-
-```
-
-##安装keepalived
-1.手动编译安装包
-```
-下载安装包,上传到虚拟机（/usr/local/src）
-https://www.keepalived.org/download.html
-
-cd /usr/local/src
-
-安装依赖
-yum install gcc gcc-c++ make automake autoconf libtool pcre pcre-devel zlib zlib-devel openssl openssl-devel
-
-解压缩 
-tar -zxvf keepalived-2.0.15.tar.gz
-
-cd /usr/local/src/keepalived-2.0.15
-./configure --prefix=/usr/local/keepalived
-
-make && make install
-
-```
-2.编写nginx监控脚本
-nginx_check.sh
-
-```
-
-#!/bin/bash
-counter=$(ps -C nginx --no-header | wc -l)
-if [ "${counter}" = "0" ]; then
-    nginx
-    sleep 2
-    counter=$(ps -C nginx --no-header | wc -l)
-    if [ "${counter}" = "0" ]; then
-        /etc/init.d/keepalived stop
-    fi
-fi
-```
-
-2.keepalived实现nginx的高可用配置
-```
-
-1.复制/usr/local/keepalived/sbin/keepalived到/usr/sbin下
-cp /usr/local/keepalived/sbin/keepalived /usr/sbin/
-
-2.keepalived默认会读取/etc/keepalived/keepalived.conf配置文件
-mkdir /etc/keepalived
-cp /usr/local/keepalived/etc/keepalived/keepalived.conf /etc/keepalived/
-3.复制sysconfig文件到/etc/sysconfig下
-cp /usr/local/keepalived/sbin/keepalived /etc/sysconfig/
-4.
-cp /usr/local/keepalived/sbin/keepalived /etc/init.d/
-chmod 755 /etc/init.d/keepalived
-
-```
-3.配置
-```
-vi /etc/keepalived/keepalived.conf
-修改：
-#vrrp_strict
-vrrp_instance VI_1 {
-    state MASTER/BACKUP
-    interface ens33  //网卡配置
-
-
-
-virtual_ipaddress {
-        192.168.246.200
-        #192.168.200.16
-        #192.168.200.17
-        #192.168.200.18
-    }
-
-
-
-```
-
-4.验证
-service keepalived
-ps -aux|grep keepalived
+# Zookeeper集群+kafka集群+elk集群
 
 
 ## zookeeper集群搭建
@@ -335,12 +195,141 @@ dataLength = 200
 numChildren = 0
 [zk: 127.0.0.1:2181(CONNECTED) 6] 
 
+```
+## elk搭建
+elk相关软件上传至/usr/local/elk
+### elasticsearch安装
+
+```
+1.
+tar -zxvf elasticsearch-7.0.0-linux-x86_64.tar.gz 
+2.用户组和用户创建，因为elasticsearch不能使用root启动
+
+groupadd elsearch
+useradd -g elsearch elsearch
+然后设置目录为elsearch 用户所属
+
+chown -R elsearch:elsearch /usr/local/elk/elasticsearch-7.0.0/
+3.创建日志存储目录位置以及数据存储目录
+mkdir -p /var/elasticsearch/data/
+mkdir -p /var/elasticsearch/logs/
+
+chown -R elsearch:elsearch  /var/elasticsearch/data/
+chown -R elsearch:elsearch  /var/elasticsearch/logs/
+
+4.设置系统参数
+配置系统最大文件数
+vi /etc/security/limits.conf
+
+elsearch       hard        nofile        65536 
+elsearch       soft        nofile        65536
+*               soft       nproc         4096
+*               hard       nproc         4096
+
+
+
+ 
+ 
+内存太小需要修改
+vi /usr/local/elk/elasticsearch-7.0.0/config/jvm.options
+将-Xmx1g改成-Xmx512m
+将-Xms1g改成-Xms512m
+-Xms512m
+-Xmx512m
+ 
+调整虚拟内存最大map数量，默认是65536，调整最大的文件数量
+vi /etc/sysctl.conf
+在文件最底下增加：
+vm.max_map_count=262144
+fs.file-max=65536
+使生效并查看值：sysctl -p
+
+5.elasticsearch配置
+/usr/local/elk/elasticsearch-7.0.0/config/elasticsearch.yml 
+
+cluster.name: my-application
+node.name: node-1#server1
+node.name: node-1#server2
+path.data: /var/elasticsearch/data
+path.logs: /var/elasticsearch/logs
+
+network.host: 192.168.246.128#server1
+
+network.host: 192.168.246.129 #server1
+http.port: 9200
+discovery.seed_hosts: ["192.168.246.128", "192.168.246.129"]
+cluster.initial_master_nodes: ["node-1", "node-2"]
+
+6.启动
+
+su elsearch
+
+cd /usr/local/elk/elasticsearch-7.0.0/bin
+./elasticsearch -d
+
+
+7.验证：
+curl 192.168.246.128:9200/_cluster/health?pretty
+```
+
+### logstash安装
+
+```
+1.解压
+/usr/local/elk
+tar -zxvf logstash-7.0.0.tar.gz 
+2.配置参数
+cd /usr/local/elk/logstash-7.0.0/config
+cp logstash-sample.conf logstash-test.conf
+3.根据样例编写logstash配置文件
+
+input {
+  kafka {
+        bootstrap_servers => ["192.168.246.128:9092,192.168.246.129:9092,192.168.246.130:9092"]
+        topics => ["test"]
+        group_id => "test"
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["192.168.246.128:9200"]
+    index => "logstash-%{[fields][document_type]}-%{+YYYY.MM.dd}"
+  }
+}
+
+4.检查格式
+./logstash -f ../config/logstash-test.conf --configtest --verbose
+
+
+5.启动
+cd /usr/local/elk/logstash-7.0.0/bin
+ ./logstash -f ../config/logstash-test.conf 
+
+ ./logstash  -daemon ../config/logstash-test.conf 
+
+ nohup /usr/local/elk/logstash-7.0.0/bin/logstash -c /usr/local/elk/logstash-7.0.0/config/logstash-test.conf  /usr/local/elk/logstash-7.0.0/logs/logstash.log &
+
 
 
 ```
 
+### kibana安装
+```
+1.解压
+    cd /usr/local/elk
+    tar -zxvf kibana-7.0.0-linux-x86_64.tar.gz
+2.配置
+vi /usr/local/elk/kibana-7.0.0-linux-x86_64/config/kibana.yml
+
+server.port: 5601
+server.host: "192.168.246.128"
+elasticsearch.hosts: ["http://192.168.246.128:9200"]
+3.启动
+nohup /usr/local/elk/kibana-7.0.0-linux-x86_64/bin/kibana -c /usr/local/elk/kibana-7.0.0-linux-x86_64/config/kibana.yml > /dev/null 2>&1 &
 
 
+```
 
 
 
