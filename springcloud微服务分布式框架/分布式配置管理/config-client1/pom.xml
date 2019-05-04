@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.xiu</groupId>
-	<artifactId>ribbon-server1</artifactId>
+	<artifactId>config-client1</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>demo</name>
 	<description>Demo project for Spring Boot</description>
@@ -54,14 +54,10 @@
 		</dependency>
 		
 		<dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-hystrix</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-hystrix-dashboard</artifactId>
-        </dependency>
-		
+	        <groupId>org.springframework.cloud</groupId>
+	        <artifactId>spring-cloud-config-server</artifactId>
+    	</dependency>
+    
 	</dependencies>
 	
 	<dependencyManagement>
