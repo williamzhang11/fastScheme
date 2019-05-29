@@ -5,6 +5,7 @@
 -	keepalived+nginx高可用集群
 -	基于ELK+Kafka的企业级实时日志分析平台
 -   基于springcloud的微服务分布式架构体系
+-	hadoop生态圈
 
 计划中的：
 -	基于Dubbo的微服务分布式架构体系
